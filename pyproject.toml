@@ -5,7 +5,8 @@ description = "Text-to-speech with automatic temp file handling, plus MCP server
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "mcp>=1.0.0",
+    "mcp>=1.8.0",
+    "pocket-tts",
 ]
 
 [project.optional-dependencies]

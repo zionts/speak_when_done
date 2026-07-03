@@ -4,6 +4,46 @@ Text-to-speech with automatic temp file handling. Speaks text aloud and cleans u
 
 Works as a CLI tool, Python library, or MCP server for AI assistants.
 
+## Local deployment: shared warm daemon (this machine)
+
+> This fork runs as **one shared HTTP-MCP daemon**, not a per-session stdio server.
+> Background: with dozens of concurrent Claude Code sessions, the old design spawned
+> a `uv run` wrapper + a python stdio server *per session* (and reloaded the TTS model
+> cold on every notification), piling up ~2 GB of idle interpreters. The daemon collapses
+> all of that into a single process with the model + all persona voices resident.
+
+**Architecture**
+- `speak_when_done/daemon.py` — long-running process (LaunchAgent `com.speak-when-done`,
+  bound to `127.0.0.1:9876`). Loads the Pocket TTS model once, preloads every persona's
+  voice state at boot, and serves the `speak` / `list_voices` tools over **streamable-HTTP MCP**
+  at `http://127.0.0.1:9876/mcp`. The default language (`english_2026-04`) is loaded eagerly;
+  other languages (e.g. attenborough's `english_2026-01`) load lazily on first use.
+- **Async FIFO queue**: `speak` validates, enqueues, and returns immediately
+  (`queued: true`, `position: N`). One background worker synthesizes and plays
+  strictly in arrival order, so audio never overlaps and MCP requests never block
+  on the TTS model (a paged-out model once made a single synthesis take 12.5 min,
+  timing out every queued client). Messages older than 10 min are dropped at
+  dequeue; an idle keep-warm generation (every 10 min, discarded, never played)
+  keeps the model weights paged in; a watchdog WARNs when one synthesis exceeds
+  45 s. Tunables (env or constants in `daemon.py`): `SPEAK_WHEN_DONE_QUEUE_MAX`
+  (20), `_STALE_AFTER_S` (600), `_KEEP_WARM_IDLE_S` (600), `_SYNTH_WATCHDOG_S` (45).
+- Every Claude session registers `speak_when_done` as `{"type":"http","url":".../mcp"}`
+  (in `~/.claude-profiles/zadam/.claude.json`) — **zero per-session processes**.
+- Persona is per-worktree: callers pass `cwd`, and the deterministic worktree-hash in
+  `__init__.py` maps it to a persona + voice. The daemon swaps only the synthesis backend
+  via the `_GENERATOR` hook in `__init__.py`; speed-stretch, the cross-session playback lock,
+  mic-suppression and drift logging are reused unchanged. When `_GENERATOR` is unset (e.g.
+  the legacy `server.py` stdio entrypoint), `speak()` falls back to spawning `uvx pocket-tts`.
+
+**Operate**
+```bash
+launchctl print gui/$(id -u)/com.speak-when-done | grep -E 'state|pid'   # status
+launchctl kickstart -k gui/$(id -u)/com.speak-when-done                  # restart (e.g. after code edits)
+tail -f ~/.claude/speak_when_done/logs/daemon.log                        # logs
+```
+After editing `daemon.py` or `__init__.py`, `kickstart -k` to reload. Persona `.md` files are
+re-read on every call and need no restart. The LaunchAgent is `KeepAlive` (auto-restarts on crash).
+
 ## What it does
 
 ```bash

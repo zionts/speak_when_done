@@ -12,6 +12,7 @@ from mcp.server.fastmcp import FastMCP
 
 from . import speak as speak_fn
 from . import list_voices as list_voices_fn
+from . import DEFAULT_VOICE
 
 # Configure logging to stderr (never stdout - it corrupts JSON-RPC)
 logging.basicConfig(
@@ -26,7 +27,7 @@ mcp = FastMCP("speak_when_done")
 
 
 @mcp.tool()
-def speak(message: str, voice: str = "alba") -> dict:
+def speak(message: str, voice: str | None = None) -> dict:
     """
     Speak a message aloud to notify the user.
 
