@@ -44,6 +44,36 @@ tail -f ~/.claude/speak_when_done/logs/daemon.log                        # logs
 After editing `daemon.py` or `__init__.py`, `kickstart -k` to reload. Persona `.md` files are
 re-read on every call and need no restart. The LaunchAgent is `KeepAlive` (auto-restarts on crash).
 
+### Pause / mute — browser control panel
+
+The daemon serves a small control page at **`http://127.0.0.1:9877/`** (separate port from
+the MCP endpoint; override with `SPEAK_WHEN_DONE_CONTROL_PORT`). One primary button mutes
+**on demand** — even when you're not in a meeting — or resumes; three chips mute for
+15 / 30 / 60 minutes. Live status shows one of On · Quiet (mic in use) · Muted, plus the
+queue depth. Below that is a **Recent** feed of the last notifications — each with its text,
+relative time, outcome (spoken · muted · mic · stale) and, when present, the persona (persona
+is optional — rows without one just omit the tag). State is file-backed (`state/pause.json`),
+so the worker's playback-time check and the UI always agree. Timed pauses auto-resume (no
+timer/daemon needed — expiry is evaluated on read).
+
+Scriptable too:
+```bash
+curl -sX POST 'http://127.0.0.1:9877/pause?minutes=30'   # quiet 30 min
+curl -sX POST  http://127.0.0.1:9877/resume              # resume now
+curl -s        http://127.0.0.1:9877/status              # JSON status + recent history
+curl -s        http://127.0.0.1:9877/history             # just the recent-speaks feed
+```
+
+### Microphone (meeting) suppression — reads FRESH in the daemon
+
+`speak()` stays silent while a mic is capturing (`is_microphone_active()`, CoreAudio). In the
+long-lived daemon the in-process CoreAudio read goes **stale** — a process that queries device
+properties but never runs a CoreAudio run loop misses some mic on/off transitions, so it drifts
+and can speak over a live meeting (observed 2026-07-05). The daemon therefore sets
+`swd.MIC_CHECK_FRESH = True`, which runs the CoreAudio query in a throwaway subprocess (a fresh
+HAL client always reads the current state; ~0.1 s per playback). Short-lived CLI/library callers
+leave the flag `False` — they're already fresh.
+
 ## What it does
 
 ```bash
