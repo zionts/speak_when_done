@@ -41,6 +41,18 @@ launchctl print gui/$(id -u)/com.speak-when-done | grep -E 'state|pid'   # statu
 launchctl kickstart -k gui/$(id -u)/com.speak-when-done                  # restart (e.g. after code edits)
 tail -f ~/.claude/speak_when_done/logs/daemon.log                        # logs
 ```
+
+### MCP registration for TBD worktree profiles — the stamper
+
+TBD mints a fresh Claude profile per worktree (`~/tbd/profiles/<uuid>/claude/`), and
+Claude Code creates each profile's `.claude.json` with **no** `mcpServers` — so worktree
+sessions couldn't find the daemon (only `~/.claude-profiles/zadam` was ever registered;
+diagnosed 2026-07-10). `scripts/stamp_mcp_profiles.sh` additively stamps the
+`{"type":"http","url":"http://127.0.0.1:9876/mcp"}` entry into every profile's
+`.claude.json` (home, `~/.claude-profiles/*`, and all TBD profiles), idempotently.
+LaunchAgent `com.speak-when-done-mcp-stamper` (StartInterval 600) re-runs it to catch
+newly-minted profiles; log at `logs/stamper.log`. A session picks the entry up on its
+next start, not mid-session.
 After editing `daemon.py` or `__init__.py`, `kickstart -k` to reload. Persona `.md` files are
 re-read on every call and need no restart. The LaunchAgent is `KeepAlive` (auto-restarts on crash).
 
