@@ -312,24 +312,29 @@ PERSONA_VOICES = {
         "speed": 1.0,
         "tagline": "Gilbert Gottfried / Iago. Nasal kvetch, escalating outrage, rhetorical questions.",
     },
-    # The three 2026-07-02 originals use Pocket TTS PREDEFINED voices (bare
-    # names, no .safetensors on disk) — see _is_builtin_voice. Voices chosen by
-    # register fit + measured f0: sandra/jessica/luca from the original spec do
-    # not exist in the installed pocket-tts and fail at synthesis.
-    "flightdeck": {
-        "path": "anna",
-        "speed": 1.1,
-        "tagline": "Over-caffeinated mission-control flight director. Crisp go/no-go callouts; anomalies are the good part.",
+    # 2026-07-10 roster swap: the three built-in-voice originals (flightdeck/
+    # gumshoe/expediter) never landed — stock pocket-tts timbre read as flat
+    # next to the cloned voices. Replaced with four clones; sources, ratings,
+    # and lessons live in ~/.claude/voices/PREFERENCES.md.
+    "freeman": {
+        "path": os.path.join(_VOICES_DIR, "freeman.safetensors"),
+        "speed": 0.93,
+        "tagline": "Morgan Freeman, documentary narration. Past-tense long view; quiet earned wisdom.",
     },
-    "gumshoe": {
-        "path": "vera",
-        "speed": 0.98,
-        "tagline": "Noir private eye. Every bug is a case; dry past-tense case-file closes, one custom simile.",
+    "ross": {
+        "path": os.path.join(_VOICES_DIR, "ross.safetensors"),
+        "speed": 0.95,
+        "tagline": "Bob Ross at the easel. Canvas-walk narration; every disaster gets a custom pardon.",
     },
-    "expediter": {
-        "path": "paul",
-        "speed": 1.12,
-        "tagline": "Michelin-kitchen expediter running the pass. Fire, plate, eighty-six; taste-before-you-toss.",
+    "cunk": {
+        "path": os.path.join(_VOICES_DIR, "cunk.safetensors"),
+        "speed": 0.94,
+        "tagline": "Philomena Cunk, landmark documentary. Epochal framing, accurate facts, one wrong question.",
+    },
+    "dexter": {
+        "path": os.path.join(_VOICES_DIR, "dexter.safetensors"),
+        "speed": 0.95,
+        "tagline": "Dexter Morgan, inner monologue. Stalks the bug, honors the Code, lands on donuts.",
     },
 }
 

@@ -1,18 +1,21 @@
-"""Tests for the 2026-07-02 persona-roster expansion wiring.
+"""Tests for persona-roster wiring (2026-07-02 expansion, 2026-07-10 swap).
 
-Three new personas (flightdeck/gumshoe/expediter) use Pocket TTS BUILTIN
-voice NAMES as their "path" instead of cloned .safetensors files, and
-pre-existing worktrees were pinned in personas/assignments.json (seeded from
-the frozen six-persona roster) so growing the roster never reshuffled an
-existing worktree's voice. Covered here:
+The 2026-07-10 swap replaced the three builtin-voice originals
+(flightdeck/gumshoe/expediter) with four cloned voices
+(freeman/ross/cunk/dexter). Builtin voice NAMES as a persona "path" remain
+supported machinery, so that path is covered via a synthetic monkeypatched
+persona rather than a live roster entry. Pins in personas/assignments.json
+(seeded from the frozen six-persona roster) keep pre-expansion worktrees on
+their original voice. Covered here:
 
 - builtin-name voice resolution (no coercion to the "alba" fallback, and the
   persona's own path comes back so speak()'s speed modifier still applies)
 - drift checking: builtin names never flag "voice file missing on disk";
-  a genuinely missing .safetensors path still does
+  a genuinely missing .safetensors path still does; the live cloned roster
+  is drift-free against the real persona files
 - assignments.json pins win over the full-roster hash (via a tmp pins file —
   never the real one)
-- the three new personas are reachable for unpinned (new) worktrees
+- the swapped-in personas are reachable for unpinned (new) worktrees
 - assignment is deterministic per path
 
 All resolution tests isolate _ASSIGNMENTS_PATH to tmp_path and clear
@@ -35,7 +38,8 @@ from speak_when_done import (
     _resolve_active_persona_and_voice,
 )
 
-NEW_PERSONAS = ("flightdeck", "gumshoe", "expediter")
+NEW_PERSONAS = ("freeman", "ross", "cunk", "dexter")
+BUILTIN_TEST_PERSONA = "builtin-test"
 
 
 def _fake_playbook(persona: str) -> str:
@@ -61,22 +65,35 @@ def _pin(pins_file, worktree: str, persona: str) -> None:
 
 
 # ---- builtin-voice resolution ------------------------------------------------
+# No live persona uses a builtin voice name since the 2026-07-10 swap, but the
+# machinery must keep working (it's the documented escape hatch for auditioning
+# a persona before its clone exists) — so cover it with a synthetic entry.
 
 
-@pytest.mark.parametrize("persona", NEW_PERSONAS)
-def test_builtin_voice_persona_resolves_to_builtin_name(pins_file, persona):
+@pytest.fixture()
+def builtin_persona(monkeypatch):
+    """A synthetic persona wired to a builtin voice NAME (no file on disk)."""
+    monkeypatch.setitem(
+        PERSONA_VOICES,
+        BUILTIN_TEST_PERSONA,
+        {"path": "anna", "speed": 1.1, "tagline": "test-only builtin persona"},
+    )
+    return BUILTIN_TEST_PERSONA
+
+
+def test_builtin_voice_persona_resolves_to_builtin_name(pins_file, builtin_persona):
     """A persona whose path is a builtin NAME resolves to that name, not 'alba'.
 
     Builtin names never exist on disk, so the missing-file fallback must skip
     them — otherwise every builtin-voice persona silently loses its timbre.
     """
     wt = "/Users/test/builtin-voice-worktree"
-    _pin(pins_file, wt, persona)
+    _pin(pins_file, wt, builtin_persona)
     got_persona, got_voice = _resolve_active_persona_and_voice(wt)
-    assert got_persona == persona
-    expected = PERSONA_VOICES[persona]["path"]
+    assert got_persona == builtin_persona
+    expected = PERSONA_VOICES[builtin_persona]["path"]
     assert _is_builtin_voice(expected), (
-        f"{persona}.path {expected!r} is expected to be a builtin voice name"
+        f"{builtin_persona}.path {expected!r} is expected to be a builtin voice name"
     )
     assert got_voice == expected, (
         f"builtin-name voice was coerced: got {got_voice!r}, want {expected!r}"
@@ -84,38 +101,41 @@ def test_builtin_voice_persona_resolves_to_builtin_name(pins_file, persona):
     assert got_voice != "alba"
 
 
-@pytest.mark.parametrize("persona", NEW_PERSONAS)
-def test_builtin_voice_persona_speed_survives(pins_file, persona):
+def test_builtin_voice_persona_speed_survives(pins_file, builtin_persona):
     """Resolution returns the persona's OWN path, which is exactly the
     condition speak() checks (is_persona_voice) before applying the persona's
     speed modifier. If resolution fell back to 'alba', speed would be lost.
     """
     wt = "/Users/test/builtin-voice-worktree"
-    _pin(pins_file, wt, persona)
+    _pin(pins_file, wt, builtin_persona)
     _, voice = _resolve_active_persona_and_voice(wt)
-    cfg = PERSONA_VOICES[persona]
+    cfg = PERSONA_VOICES[builtin_persona]
     assert voice == cfg["path"], (
         "voice != persona path would disable the persona speed in speak()"
     )
-    # The new personas all carry a non-default speed; it must still be wired.
     assert cfg.get("speed", 1.0) != 1.0
+
+
+@pytest.mark.parametrize("persona", NEW_PERSONAS)
+def test_cloned_persona_speed_is_wired(persona):
+    """The swapped-in personas all carry a non-default speed."""
+    assert PERSONA_VOICES[persona].get("speed", 1.0) != 1.0
 
 
 # ---- drift checking ----------------------------------------------------------
 
 
-@pytest.mark.parametrize("persona", NEW_PERSONAS)
-def test_builtin_voice_produces_no_missing_file_drift(persona):
+def test_builtin_voice_produces_no_missing_file_drift(builtin_persona):
     """Builtin voice names must not be flagged as missing files on disk."""
-    voice = PERSONA_VOICES[persona]["path"]
-    playbooks = {persona: _fake_playbook(persona)}
-    issues = _check_drift(persona, voice, playbooks)
+    voice = PERSONA_VOICES[builtin_persona]["path"]
+    playbooks = {builtin_persona: _fake_playbook(builtin_persona)}
+    issues = _check_drift(builtin_persona, voice, playbooks)
     assert not any("voice file missing" in i for i in issues), issues
     assert issues == []
 
 
-def test_builtin_voice_personas_are_drift_free_against_real_playbooks():
-    """The live wiring: real persona files + builtin voices → drift == []."""
+def test_cloned_roster_is_drift_free_against_real_playbooks():
+    """The live wiring: real persona files + real safetensors → drift == []."""
     playbooks = _load_persona_playbooks()
     for persona in NEW_PERSONAS:
         issues = _check_drift(persona, PERSONA_VOICES[persona]["path"], playbooks)
