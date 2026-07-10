@@ -1,5 +1,5 @@
 {
-  "_comment": "Per-worktree persona pins. Seeded 2026-07-02 when the roster grew from 6 to 9 personas: every worktree known at that point is pinned to its original six-persona assignment so the expansion changed no existing voice. Unlisted worktrees hash over the full roster. Edit freely to pin any worktree to any persona; re-read on every call.",
+  "_comment": "Per-worktree persona pins. Seeded 2026-07-02 when the roster grew from 6 to 9 personas: every worktree known at that point is pinned to its original six-persona assignment so the expansion changed no existing voice. Unlisted worktrees hash over the full roster. Edit freely to pin any worktree to any persona; re-read on every call. 2026-07-10: gumshoe/expediter/flightdeck retired (no pins ever referenced them \u2014 they were only hash-assigned); freeman/ross/cunk/dexter joined the hash roster.",
   "seeded_at": "2026-07-03T00:32:20+00:00",
   "legacy_roster": [
     "aghdashloo",
