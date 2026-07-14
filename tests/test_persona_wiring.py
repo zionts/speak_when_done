@@ -38,7 +38,7 @@ from speak_when_done import (
     _resolve_active_persona_and_voice,
 )
 
-NEW_PERSONAS = ("freeman", "ross", "cunk", "dexter")
+NEW_PERSONAS = ("freeman", "bandit", "cunk", "dexter")
 BUILTIN_TEST_PERSONA = "builtin-test"
 
 
@@ -118,8 +118,9 @@ def test_builtin_voice_persona_speed_survives(pins_file, builtin_persona):
 
 @pytest.mark.parametrize("persona", NEW_PERSONAS)
 def test_cloned_persona_speed_is_wired(persona):
-    """The swapped-in personas all carry a non-default speed."""
-    assert PERSONA_VOICES[persona].get("speed", 1.0) != 1.0
+    """The swapped-in personas all carry an explicit, sane speed."""
+    speed = PERSONA_VOICES[persona]["speed"]
+    assert 0.8 <= speed <= 1.2
 
 
 # ---- drift checking ----------------------------------------------------------

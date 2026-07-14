@@ -321,10 +321,12 @@ PERSONA_VOICES = {
         "speed": 0.93,
         "tagline": "Morgan Freeman, documentary narration. Past-tense long view; quiet earned wisdom.",
     },
-    "ross": {
-        "path": os.path.join(_VOICES_DIR, "ross.safetensors"),
-        "speed": 0.95,
-        "tagline": "Bob Ross at the easel. Canvas-walk narration; every disaster gets a custom pardon.",
+    # 2026-07-13: ross retired (calm register read as Dexter on flat text;
+    # user never bonded with him). Replaced by bandit.
+    "bandit": {
+        "path": os.path.join(_VOICES_DIR, "bandit.safetensors"),
+        "speed": 1.0,
+        "tagline": "Bandit Heeler. The task made the rules, he played the horse, everyone won. His back hurts.",
     },
     "cunk": {
         "path": os.path.join(_VOICES_DIR, "cunk.safetensors"),
