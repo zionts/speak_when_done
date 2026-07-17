@@ -43,9 +43,12 @@ files, and prints the MCP registration line. It does **not** register the MCP se
 load the daemon for you — those are the next two steps.
 
 **The install path matters.** `speak_when_done/__init__.py` resolves personas from
-`~/.claude/speak_when_done/personas` and voices from `~/.claude/voices` — both hardcoded
-(`__init__.py:280`, `__init__.py:271`). If you clone somewhere else, edit those two
-constants.
+`~/.claude/speak_when_done/personas` and voices from `~/.claude/voices`. Both are
+hardcoded — they're the `_PERSONA_DIR` and `_VOICES_DIR` constants near the top of the
+file, and there is no env var for either.
+
+Cloning to the path above is the path of least resistance. If you clone somewhere else,
+edit those two constants to match, or nothing will find your personas.
 
 ---
 
@@ -88,21 +91,27 @@ of spawning its own server process:
 claude mcp add speak_when_done --scope user --transport http http://127.0.0.1:9876/mcp
 ```
 
-Restart any open Claude Code session — MCP config is read at session start, never
-mid-session.
+`--scope user` registers it for all your projects. Use `--scope project` instead if you
+only want it in the current one.
 
-Verify inside a session by calling `list_voices(cwd="<your cwd>")`. You want `drift: []`.
-A non-empty `drift` names exactly what's out of sync.
+Then **fully quit and reopen Claude Code** — MCP config is read at session start, never
+mid-session, so an open session won't see it no matter how long you wait.
 
-### If you use many worktrees
+Verify inside a session by asking Claude to call `list_voices` with your current directory.
+You want `drift: []`; a non-empty `drift` names exactly what's out of sync.
 
-`scripts/stamp_mcp_profiles.sh` additively stamps the MCP entry into every Claude profile
-it finds (`~/.claude.json`, `~/.claude-profiles/*`, `~/tbd/profiles/*`). It exists because
-tooling that mints a fresh Claude profile per worktree creates each `.claude.json` with no
-`mcpServers`, so those sessions can't find the daemon. It's idempotent and safe to re-run.
+### Optional — many Claude profiles
 
-The script's profile globs are specific to the author's setup — read it before trusting
-it, and skip this section entirely if you have one profile.
+**Skip this unless you use tooling that creates a separate Claude profile per git
+worktree.** If the command above worked, you're done; go to step 5.
+
+Some worktree managers mint a fresh Claude profile per worktree, and those
+`.claude.json` files are created with no `mcpServers` — so those sessions can't find the
+daemon. `scripts/stamp_mcp_profiles.sh` additively stamps the entry into every profile it
+finds (`~/.claude.json`, `~/.claude-profiles/*`, `~/tbd/profiles/*`). It's idempotent and
+safe to re-run.
+
+The script's profile globs are specific to the author's setup — read it before trusting it.
 
 To keep newly-minted profiles stamped automatically, install the companion agent:
 
@@ -116,7 +125,11 @@ launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.speak-when-done-mcp-
 
 ## 5. Tell Claude to actually use it
 
-Add to your `~/.claude/CLAUDE.md`:
+Registering the server gives Claude the tool, but it won't reach for it on its own. You
+have to ask.
+
+`~/.claude/CLAUDE.md` is Claude Code's standing-instructions file — it's loaded into every
+session, in every project. Create it if it doesn't exist, and add:
 
 ```markdown
 # speak_when_done
@@ -133,16 +146,22 @@ The shared daemon can't infer your worktree from the process tree; `cwd` is how 
 picks the right persona.
 ```
 
-The `cwd` argument is load-bearing. One daemon serves every session, so without `cwd` it
-can't tell your worktrees apart and everything falls back to a single default persona.
+The `cwd` argument is load-bearing: **without it, every project shares one persona** and
+the whole per-project-character feature quietly does nothing. One daemon serves every
+session, so `cwd` is the only thing telling your projects apart.
+
+If you don't use git worktrees, none of this breaks — `cwd` is just your project
+directory, and each project you work in gets its own character.
 
 ---
 
 ## 6. Voices
 
 **This repo ships no voice files.** Fresh installs fall back to pocket-tts's built-in
-`alba` for every persona (`__init__.py:692`) — the registers still work, so personas will
-read in character, just not in their own timbre.
+`alba` for every persona — the registers still work, so personas read in character, just
+not in their own timbre. (A *voice file*, or tensor, is a `.safetensors` file encoding how
+one person sounds; *timbre* is that sound. The register is the writing; the tensor is the
+voice.)
 
 To get the timbre, train your own clones: **[docs/voice-training.md](voice-training.md)**.
 

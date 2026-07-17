@@ -5,6 +5,23 @@ Usage: python filter_speaker.py IN.wav OUT.wav [MAX_SECONDS]
 Sliding-window d-vector embeddings (resemblyzer) -> KMeans(k=2) ->
 keep the cluster with the most total duration (the compilation's host),
 drop windows near the decision boundary, stitch with short crossfades.
+
+Dependencies:
+
+    pip install resemblyzer scikit-learn soundfile 'setuptools<81'
+
+The setuptools pin is load-bearing, not incidental: resemblyzer pulls in webrtcvad,
+which imports pkg_resources — removed in setuptools 81. Unpinned, the import below
+fails outright.
+
+Only run this on genuinely multi-speaker audio. KMeans(k=2) forced onto a single
+speaker splits them arbitrarily and throws away most of the clip (observed: 2-4s
+kept from a 24s solo source). Solo clip -> feed the raw audio to export-voice.
+
+It clusters *speakers*, not registers — it cannot separate one person's normal
+voice from the same person doing a bit. Trim wrong-register sections by time first.
+
+See docs/voice-training.md for where this sits in the pipeline.
 """
 import sys
 

@@ -6,6 +6,12 @@ The whole pipeline is **source audio → isolate → filter → export → audit
 export step is a single command. The hard part isn't the tooling, it's picking a voice
 that clones well and finding clean audio of it. Most of this doc is about that.
 
+> **Budget a few hours per voice, not a few minutes.** Setup is half an hour, once. After
+> that, a voice that works can take one clip and twenty minutes — or a dozen sources
+> across an evening. **Plenty of voices never work at any source quality**, and no amount
+> of effort rescues them. Read [Picking a voice that will actually work](#picking-a-voice-that-will-actually-work)
+> *before* you go hunting for audio; it's the section that saves you the most time.
+
 ## Before you start: whose voice?
 
 Clone voices you have the standing to clone — your own, a colleague's with their consent,

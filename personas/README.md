@@ -37,8 +37,8 @@ Retiring is the same in reverse: drop the file, drop the `PERSONA_VOICES` entry,
 the tensor. No back-compat shims — `drift` confirms nothing's left over.
 
 **A missing tensor is not fatal.** Personas with no voice file fall back to the built-in
-pocket-tts voice `alba` (`__init__.py:692`), so a fresh clone of this repo works
-immediately — right register, wrong timbre.
+pocket-tts voice `alba`, so a fresh clone of this repo works immediately — right register,
+wrong timbre.
 
 ## Making them yours
 
@@ -62,14 +62,14 @@ or someone else's, change it or drop the persona. Nothing here is load-bearing.
 
 ## Overrides
 
-Env vars, on the daemon:
+**[docs/setup.md § 8](../docs/setup.md) is the authoritative env-var list** — it's kept in
+one place on purpose, so it can't drift out of sync with a second copy here.
 
-| Env var | Effect |
-|---|---|
-| `SPEAK_WHEN_DONE_VOICE=<path-or-name>` | Use a specific voice file or built-in name. If the path matches one of the personas' tensors, that persona locks in too; otherwise the register still resolves from the worktree hash. |
-| `SPEAK_WHEN_DONE_LANGUAGE=<lang>` | Override the pocket-tts model version (default `english_2026-04`). A tensor is tied to the model it was exported from. |
-| `SPEAK_WHEN_DONE_NO_CWD_DISCOVERY=1` | Disable caller-cwd discovery. |
+Two entries matter for personas specifically:
 
-To pin one persona everywhere, point `SPEAK_WHEN_DONE_VOICE` at its tensor. To silence the
-whole thing without touching config, use the control UI at <http://127.0.0.1:9877/> — one
-button, or a 15/30/60-minute chip. It also self-suppresses while a mic is live.
+- To **pin one persona everywhere**, point `SPEAK_WHEN_DONE_VOICE` at its tensor. Pointed
+  at anything else (a built-in voice name, an unrelated path), it honours the voice but
+  still takes the register from the worktree hash.
+- There is **no env var to select a persona by name**, and none to disable the tool. To
+  silence it, use the control UI at <http://127.0.0.1:9877/> — one button, or a
+  15/30/60-minute chip. It also self-suppresses while a mic is live.
