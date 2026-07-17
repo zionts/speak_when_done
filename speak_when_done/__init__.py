@@ -24,6 +24,7 @@ import subprocess
 import sys
 import tempfile
 import time
+from collections.abc import Mapping
 
 __version__ = "0.1.0"
 
@@ -270,14 +271,46 @@ def _play_audio(player_cmd: list[str], audio_path: str, timeout: int = 120) -> d
 # from; override here if a local voice clone was generated against an older model.
 DEFAULT_LANGUAGE = os.environ.get("SPEAK_WHEN_DONE_LANGUAGE", "english_2026-04")
 
-_VOICES_DIR = os.path.expanduser("~/.claude/voices")
+_PACKAGE_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-# Persona registers live in individual files under ~/.claude/speak_when_done/
-# personas/ (one per persona, plus _common.md for shared discipline/TTS rules).
-# Editing those files is reflected in `list_voices()` immediately. PERSONA_VOICES
-# below only stores audio plumbing (path/speed/language) plus a one-line fallback
-# tagline used when a persona file is missing or unreadable.
-_PERSONA_DIR = os.path.expanduser("~/.claude/speak_when_done/personas")
+
+def _resolve_voices_dir(environ: Mapping[str, str] | None = None) -> str:
+    """Where voice .safetensors live.
+
+    Voice tensors are user-trained and ship with nobody (see docs/voice-training.md),
+    so they default under the home dir rather than beside the code.
+    """
+    environ = os.environ if environ is None else environ
+    return os.path.expanduser(
+        environ.get("SPEAK_WHEN_DONE_VOICES_DIR") or "~/.claude/voices"
+    )
+
+
+def _resolve_persona_dir(
+    environ: Mapping[str, str] | None = None, package_root: str | None = None
+) -> str:
+    """Where persona register files live.
+
+    personas/ ships in the repo, so this resolves relative to the package rather
+    than to a fixed home path — a clone anywhere works with no configuration. For
+    the canonical ~/.claude/speak_when_done install it is the directory it always was.
+    """
+    environ = os.environ if environ is None else environ
+    package_root = _PACKAGE_ROOT if package_root is None else package_root
+    return os.path.expanduser(
+        environ.get("SPEAK_WHEN_DONE_PERSONA_DIR")
+        or os.path.join(package_root, "personas")
+    )
+
+
+_VOICES_DIR = _resolve_voices_dir()
+
+# Persona registers live in individual files in personas/ (one per persona, plus
+# _common.md for shared discipline/TTS rules). Editing those files is reflected in
+# `list_voices()` immediately. PERSONA_VOICES below only stores audio plumbing
+# (path/speed/language) plus a one-line fallback tagline used when a persona file
+# is missing or unreadable.
+_PERSONA_DIR = _resolve_persona_dir()
 
 PERSONA_VOICES = {
     "attenborough": {

@@ -42,13 +42,20 @@ cd ~/.claude/speak_when_done
 files, and prints the MCP registration line. It does **not** register the MCP server or
 load the daemon for you — those are the next two steps.
 
-**The install path matters.** `speak_when_done/__init__.py` resolves personas from
-`~/.claude/speak_when_done/personas` and voices from `~/.claude/voices`. Both are
-hardcoded — they're the `_PERSONA_DIR` and `_VOICES_DIR` constants near the top of the
-file, and there is no env var for either.
+**You can clone anywhere.** Persona files ship in the repo and are found relative to the
+package, so a clone in anyone's preferred directory works with no configuration. The paths
+above are only a convention — the LaunchAgent in step 3 is what pins the daemon to a
+specific directory, and its template is generated from wherever you cloned.
 
-Cloning to the path above is the path of least resistance. If you clone somewhere else,
-edit those two constants to match, or nothing will find your personas.
+Voice files are the exception: they're user-trained and not in the repo, so they default to
+`~/.claude/voices`. Set `SPEAK_WHEN_DONE_VOICES_DIR` to keep them elsewhere.
+
+Three things are still anchored to your home dir regardless of where you clone: `logs/` and
+`state/` are written under `~/.claude/speak_when_done/`, and the cross-process playback lock
+lives at `~/.claude/speak_when_done.lock`. The lock is deliberately global — it's what stops
+two sessions talking over each other. The other two are just leftovers; they work fine from
+any clone, they're merely in a surprising place. Cloning to the canonical path avoids the
+oddity entirely.
 
 ---
 
@@ -209,6 +216,8 @@ Env vars, set in the LaunchAgent's `EnvironmentVariables` dict:
 | `SPEAK_WHEN_DONE_PORT` | `9876` | MCP bind port |
 | `SPEAK_WHEN_DONE_CONTROL_HOST` | `127.0.0.1` | control UI bind host |
 | `SPEAK_WHEN_DONE_CONTROL_PORT` | `9877` | control UI bind port |
+| `SPEAK_WHEN_DONE_PERSONA_DIR` | `<repo>/personas` | Where persona register files are read from. Defaults beside the code, so a clone anywhere works |
+| `SPEAK_WHEN_DONE_VOICES_DIR` | `~/.claude/voices` | Where voice tensors are looked up |
 | `SPEAK_WHEN_DONE_LANGUAGE` | `english_2026-04` | pocket-tts model version. A voice tensor is tied to the model it was exported from |
 | `SPEAK_WHEN_DONE_VOICE` | — | force a specific voice file or built-in name. If the path matches a persona's tensor, that persona locks in too; otherwise the register still comes from the worktree hash |
 | `SPEAK_WHEN_DONE_QUEUE_MAX` | `20` | max queued messages |

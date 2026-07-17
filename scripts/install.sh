@@ -37,11 +37,12 @@ command -v uv > /dev/null || die "uv not on PATH. See https://docs.astral.sh/uv/
 command -v ffmpeg > /dev/null || warn "ffmpeg not on PATH — persona speed-stretch will not work. brew install ffmpeg"
 [ -d "$PERSONA_DIR" ] || die "persona dir missing at $PERSONA_DIR"
 
-# __init__.py hardcodes ~/.claude/speak_when_done/personas and ~/.claude/voices.
-# A clone elsewhere works only if you edit those constants, so say so loudly.
+# Personas resolve relative to this package, so a clone anywhere works. Logs and state
+# are still written under ~/.claude/speak_when_done/ regardless — surprising, not broken.
 if [ "$PACKAGE_DIR" != "$EXPECTED_DIR" ]; then
-    warn "Installed at $PACKAGE_DIR, but __init__.py resolves personas from $EXPECTED_DIR/personas."
-    warn "Either clone to $EXPECTED_DIR, or edit _PERSONA_DIR in speak_when_done/__init__.py."
+    warn "Installed at $PACKAGE_DIR (not the conventional $EXPECTED_DIR)."
+    warn "Personas resolve from $PERSONA_DIR and will work fine."
+    warn "Note: logs/ and state/ are still written under $EXPECTED_DIR/."
 fi
 ok "macOS, uv, and personas/ present"
 
