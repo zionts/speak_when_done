@@ -8,6 +8,23 @@ calibration-only vignettes, and an "avoid" list of common parody failure modes.
 
 Files are read at runtime on every call. Edit them freely — no restart, no rebuild.
 
+## Start with these two
+
+All ten registers ship here as worked examples. If you're writing your own, read these
+first — they're the clearest statement of the house shape, and they bracket the range:
+
+- **[`attenborough.md`](attenborough.md)** — hushed, unhurried, awed. A persona built on
+  *restraint*, where the discipline is what makes it land.
+- **[`dexter.md`](dexter.md)** — an inner monologue that stalks the bug, honors the Code,
+  and lands on donuts. A persona built on *structure*, where a rigid two-beat move carries
+  every message.
+
+Then read [`_common.md`](_common.md) — the shared discipline and TTS-writing rules that
+apply to all of them, whatever character you write.
+
+A register is not a costume; it's a set of constraints tight enough that two different
+messages in the same voice still sound like one person. That's what these two show.
+
 ## How a persona resolves
 
 Callers pass `cwd`. A SHA-256 hash of the worktree path deterministically maps it to a
