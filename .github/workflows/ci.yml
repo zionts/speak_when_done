@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+    branches: [main, local-live-install]
+  pull_request:
+
+jobs:
+  test:
+    # macOS, not ubuntu: this tool is macOS-only (afplay playback, CoreAudio mic
+    # detection). Testing on linux would pass while proving nothing about the
+    # platform anyone actually runs. Free on public repos.
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Sync deps
+        run: uv sync --extra dev
+
+      - name: Tests
+        run: uv run pytest tests/ -q
+
+      # The drift check that matters: PERSONA_VOICES and personas/*.md must agree
+      # on the roster. Adding one without the other is the failure this repo
+      # actually hits — see CLAUDE.md § "The three legs".
+      - name: Persona drift check
+        run: uv run python -m speak_when_done.cli --validate-personas

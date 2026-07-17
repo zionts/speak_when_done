@@ -23,6 +23,7 @@ SPEAK_WHEN_DONE_VOICE, so nothing here reads or writes the real personas dir.
 """
 
 import json
+import os
 
 import pytest
 
@@ -135,6 +136,20 @@ def test_builtin_voice_produces_no_missing_file_drift(builtin_persona):
     assert issues == []
 
 
+# Voice tensors ship with nobody (docs/voice-training.md), so live-wiring checks
+# that require them must skip — visibly, not silently — on fresh clones and CI.
+_TENSORS_PRESENT = all(
+    _is_builtin_voice(PERSONA_VOICES[p]["path"])
+    or os.path.exists(PERSONA_VOICES[p]["path"])
+    for p in NEW_PERSONAS
+)
+
+
+@pytest.mark.skipif(
+    not _TENSORS_PRESENT,
+    reason="live-install integrity check: requires trained voice tensors on disk; "
+    "fresh clones and CI ship none (docs/voice-training.md)",
+)
 def test_cloned_roster_is_drift_free_against_real_playbooks():
     """The live wiring: real persona files + real safetensors → drift == []."""
     playbooks = _load_persona_playbooks()
@@ -211,7 +226,13 @@ def test_new_personas_reachable_for_unpinned_worktrees(pins_file, persona):
         if _pick_persona_for_worktree(wt) == persona:
             got_persona, got_voice = _resolve_active_persona_and_voice(wt)
             assert got_persona == persona
-            assert got_voice == PERSONA_VOICES[persona]["path"]
+            # The voice contract is environment-dependent by design: the tensor
+            # path when the file exists, the "alba" fallback when it doesn't
+            # (tensors ship with nobody). Assert whichever applies here so the
+            # hashing coverage above still runs on tensor-less machines and CI.
+            tensor = PERSONA_VOICES[persona]["path"]
+            expected = tensor if os.path.exists(tensor) else "alba"
+            assert got_voice == expected
             return
     pytest.fail(f"no synthetic path out of 2000 hashed to {persona!r}")
 
