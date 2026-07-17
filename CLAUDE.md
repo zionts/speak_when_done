@@ -89,6 +89,12 @@ Tests read live state: `state/pause.json` is real, so `test_microphone_detection
 the daemon happens to be paused via the control UI when you run the suite. That's the test
 environment, not your change.
 
+Two wiring tests are tensor-aware, because tensors ship with nobody: the live-install
+drift check skips (visibly) on machines without trained voices, and the persona
+reachability test asserts the tensor path when the file exists and the `alba` fallback
+when it doesn't. On your machine with a full voice set, everything runs strict; on a
+fresh clone or CI, nothing fails for lack of files the repo deliberately excludes.
+
 ## Scope
 
 Persona work stays in this fork — it is not upstreamable to
