@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Template — substitute __HOME__ before installing:
+
+    sed "s|__HOME__|$HOME|g" scripts/com.speak-when-done.plist.template \
+      > ~/Library/LaunchAgents/com.speak-when-done.plist
+    launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.speak-when-done.plist
+
+  See docs/setup.md.
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.speak-when-done</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>__HOME__/.claude/speak_when_done/.venv/bin/python3</string>
+        <string>-m</string>
+        <string>speak_when_done.daemon</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>__HOME__/.claude/speak_when_done</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>SPEAK_WHEN_DONE_PORT</key>
+        <string>9876</string>
+        <key>SPEAK_WHEN_DONE_HOST</key>
+        <string>127.0.0.1</string>
+        <!-- afplay lives in /usr/bin; ffmpeg (persona speed-stretch) in /opt/homebrew/bin.
+             launchd's default PATH omits Homebrew, so set it explicitly. -->
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    </dict>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>KeepAlive</key>
+    <true/>
+
+    <key>StandardOutPath</key>
+    <string>__HOME__/.claude/speak_when_done/logs/daemon.log</string>
+    <key>StandardErrorPath</key>
+    <string>__HOME__/.claude/speak_when_done/logs/daemon.log</string>
+</dict>
+</plist>

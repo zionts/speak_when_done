@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Optional. Only useful if tooling mints a fresh Claude profile per worktree — those
+  profiles are created with no mcpServers entry, so their sessions can't find the daemon.
+  This re-runs the stamper every 10 minutes to catch newly-minted profiles.
+
+  Skip this if you have one Claude profile.
+
+    sed "s|__HOME__|$HOME|g" scripts/com.speak-when-done-mcp-stamper.plist.template \
+      > ~/Library/LaunchAgents/com.speak-when-done-mcp-stamper.plist
+    launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.speak-when-done-mcp-stamper.plist
+
+  See docs/setup.md.
+-->
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>com.speak-when-done-mcp-stamper</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>/bin/bash</string>
+		<string>__HOME__/.claude/speak_when_done/scripts/stamp_mcp_profiles.sh</string>
+	</array>
+	<key>StartInterval</key>
+	<integer>600</integer>
+	<key>RunAtLoad</key>
+	<true/>
+	<key>StandardOutPath</key>
+	<string>__HOME__/.claude/speak_when_done/logs/stamper-launchd.log</string>
+	<key>StandardErrorPath</key>
+	<string>__HOME__/.claude/speak_when_done/logs/stamper-launchd.log</string>
+</dict>
+</plist>
